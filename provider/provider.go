@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -34,20 +33,8 @@ func (p *Provider) Metadata(ctx context.Context, req provider.MetadataRequest, r
 }
 
 func (p *Provider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
-	vaultConfigSchema := schema.ObjectAttribute{
-		AttributeTypes: map[string]attr.Type{
-			"endpoint": types.StringType,
-
-			// TODO(antoine): mTLS
-			// "ca":   types.StringType,
-			// "cert": types.StringType,
-			// "key":  types.StringType,
-
-			"token": types.StringType,
-		},
-		Required: true,
-	}
 	// TODO(antoine): make sure extra / in paths are not an issue
+	// TODO(antoine): more validation
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"transit_vault_config": vaultConfigSchema,
@@ -83,16 +70,19 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 
 	transitVaultConfig := VaultConfigModel{}
 	KVVaultConfig := VaultConfigModel{}
-	resp.Diagnostics.Append(data.TransitVaultConfig.As(ctx, &transitVaultConfig, basetypes.ObjectAsOptions{})...)
+	resp.Diagnostics.Append(data.TransitVaultConfig.As(ctx, &transitVaultConfig, basetypes.ObjectAsOptions{})...) // TODO: extra fields don't yield errors
 	resp.Diagnostics.Append(data.KVVaultConfig.As(ctx, &KVVaultConfig, basetypes.ObjectAsOptions{})...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	transitVaultClient, err := newClient(transitVaultConfig)
+	transitVaultClient, err := newClient(ctx, transitVaultConfig)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to setup transit vault client", err.Error())
 		return
 	}
 
-	targetVaultClient, err := newClient(KVVaultConfig)
+	targetVaultClient, err := newClient(ctx, KVVaultConfig)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to setup KV vault client", err.Error())
 		return

@@ -3,18 +3,12 @@ provider "vault-secrets-as-code" {
   transit_vault_config = {
     endpoint = "http://127.0.0.1:8200"
     token    = "blipblop"
-    CA       = ""
-    cert     = ""
-    key      = ""
   }
 
   // can be the same or a different vault server
   kv_vault_config = {
     endpoint = "http://127.0.0.1:8200"
     token    = "blipblop"
-    CA       = ""
-    cert     = ""
-    key      = ""
   }
 
   transit_path = "transit/"
@@ -24,11 +18,10 @@ provider "vault-secrets-as-code" {
   managed_by = "terraform-vault-secrets-as-code"
 }
 
-
 resource "vault-secrets-as-code_secret" "mysupersecret" {
   path = "my/super/secret"
   encrypted_secrets = {
-    // vault write transit/encrypt/my-key plaintext=$(echo "itsame" | base64)
-    a = "vault:v1:xxxxxxxxxxxxxxxxxx"
+    // vault write transit/encrypt/my-key plaintext=$(echo "mario" | base64)
+    itsame = "vault:v1:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   }
 }

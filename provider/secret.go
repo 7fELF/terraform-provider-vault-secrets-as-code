@@ -118,7 +118,13 @@ func (r *SecretResource) Read(ctx context.Context, req resource.ReadRequest, res
 		if value, ok := decrypted[k]; ok && value == v {
 			dataout[k] = data.EncryptedSecrets[k]
 		} else {
-			dataout[k], err = r.transit.Encrypt(ctx, v.(string))
+			vstr, ok := v.(string)
+			if !ok {
+				resp.Diagnostics.AddError("Values must be strings",
+					fmt.Sprintf("the value of %q in secrert %q is not a string", k, data.Path))
+				return
+			}
+			dataout[k], err = r.transit.Encrypt(ctx, vstr)
 			if err != nil {
 				resp.Diagnostics.AddError("failed encrypt secret", err.Error())
 				return
